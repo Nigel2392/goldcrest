@@ -23,7 +23,7 @@ Example:
 ```go
 type MyIntFunc func([]int) []int
 
-hooks.Register(
+goldcrest.Register(
 	"construct_int_list", -1,
 	func(list []int) []int {
 		return append(list, 1)
@@ -37,7 +37,7 @@ To actually retrieve the results / execute the hooks we need to retrieve them fr
 var myIntList = make([]int, 0)
 myIntList = append(myIntList, 1, 2, 3)
 
-var hookList = hooks.Get[MyIntFunc]("construct_int_list")
+var hookList = goldcrest.Get[MyIntFunc]("construct_int_list")
 for _, hook := range hookList {
 	myIntList = hook(myIntList)
 }
@@ -49,7 +49,7 @@ We can also unregister the hook.
 **Be mindful!** It will delete all functions registered to it too.
 
 ```go
-hooks.Unregister("construct_int_list")
+goldcrest.Unregister("construct_int_list")
 ```
 
 ## Implementation Details
@@ -64,7 +64,7 @@ Example:
 
 ```go
 // Create a custom hooks registry
-var myHooksRegistry = make(hooks.HookRegistry)
+var myHooksRegistry = make(goldcrest.HookRegistry)
 
 // Register a hook to your custom registry
 myHooksRegistry.register(
@@ -73,7 +73,7 @@ myHooksRegistry.register(
 
 // Get a hook from your custom registry.
 // Note: we do not adress the custom registry directly.
-var hookList = hooks.GetFrom[MyIntFunc](myHooksRegistry, "construct_int_list")
+var hookList = goldcrest.GetFrom[MyIntFunc](myHooksRegistry, "construct_int_list")
 // ...
 
 // Unregister a hook from your registry
