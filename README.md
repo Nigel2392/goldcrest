@@ -12,10 +12,6 @@ Easily install this with `go get`:
 go get github.com/Nigel2392/goldcrest@latest
 ```
 
-## When to use
-
-Hooks should be registered at initialization, this should probably not be done dynamically.
-
 ## How to use
 
 We can register hooks by specyfing a name, order and functions for that hook.
@@ -48,6 +44,38 @@ for _, hook := range hookList {
 
 ```
 
-We can also unregister the hook. 
+We can also unregister the hook.
 
 **Be mindful!** It will delete all functions registered to it too.
+
+```go
+hooks.Unregister("construct_int_list")
+```
+
+## Implementation Details
+
+Hooks should be registered at initialization, this should probably not be done dynamically.
+
+The registry is implemented as a map. *This means you will not be able to concurrently add hooks.*
+
+We do however provide a way to create a separate registry. This will allow for more dynamic additions to the registry.
+
+Example:
+
+```go
+// Create a custom hooks registry
+var myHooksRegistry = make(hooks.HookRegistry)
+
+// Register a hook to your custom registry
+myHooksRegistry.register(
+	// ... Same as before
+)
+
+// Get a hook from your custom registry.
+// Note: we do not adress the custom registry directly.
+var hookList = hooks.GetFrom[MyIntFunc](myHooksRegistry, "construct_int_list")
+// ...
+
+// Unregister a hook from your registry
+myHooksRegistry.Unregister("construct_int_list")
+```
