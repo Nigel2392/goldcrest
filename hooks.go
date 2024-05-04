@@ -107,44 +107,53 @@ func Unregister(identifier string) {
 }
 
 // Get the hooks
-func Get[T any](identifier string) (h []T) {
-	return get[T](DefaultRegistry, identifier)
+func Get[T any](identifiers ...string) (h []T) {
+	return get[T](DefaultRegistry, identifiers...)
 }
 
 // Get the hooks from a registry
-func GetFrom[T any](registry HookRegistry, identifier string) (h []T) {
-	return get[T](registry, identifier)
+func GetFrom[T any](registry HookRegistry, identifiers ...string) (h []T) {
+	return get[T](registry, identifiers...)
 }
 
 // Get the hooks, casting the interfaces back to functions
-func get[T any](registry HookRegistry, identifier string) (h []T) {
-	var hooks, ok = registry[identifier]
-	if !ok {
-		return make([]T, 0)
+func get[T any](registry HookRegistry, identifiers ...string) (h []T) {
+	if len(identifiers) == 0 {
+		panic("no identifiers provided")
 	}
 
-	// Sort the hooks by order.
-	slices.SortFunc(hooks, func(i, j *_Hook) int {
-		// Sort by order, the higher the order the later it is called
-		if i.Order < j.Order {
-			return -1
-		} else if i.Order > j.Order {
-			return 1
+	var hookList = make([]T, 0)
+	for _, identifier := range identifiers {
+		var hooks, ok = registry[identifier]
+		if !ok {
+			return make([]T, 0)
 		}
-		return 0
-	})
 
-	// Cast the hooks back to function types
-	var (
-		hookList = make([]T, len(hooks))
-		typeOfT  = reflect.TypeOf(*new(T))
-	)
-	for i, hook := range hooks {
-		if hook.TFunc.ConvertibleTo(typeOfT) {
-			hookList[i] = hook.VFunc.Convert(typeOfT).Interface().(T)
-		} else {
-			panic(fmt.Sprintf("hook %d is not of type %T but %T, cannot convert.", i, hook.Func, hook.TFunc))
+		// Sort the hooks by order.
+		slices.SortFunc(hooks, func(i, j *_Hook) int {
+			// Sort by order, the higher the order the later it is called
+			if i.Order < j.Order {
+				return -1
+			} else if i.Order > j.Order {
+				return 1
+			}
+			return 0
+		})
+
+		// Cast the hooks back to function types
+		var (
+			subList = make([]T, len(hooks))
+			typeOfT = reflect.TypeOf(*new(T))
+		)
+		for i, hook := range hooks {
+			if hook.TFunc.ConvertibleTo(typeOfT) {
+				subList[i] = hook.VFunc.Convert(typeOfT).Interface().(T)
+			} else {
+				panic(fmt.Sprintf("hook %d is not of type %T but %T, cannot convert.", i, hook.Func, hook.TFunc))
+			}
 		}
+
+		hookList = append(hookList, subList...)
 	}
 
 	return hookList
